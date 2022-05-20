@@ -1,6 +1,11 @@
 import time
-import mkl
 import numpy as np
+
+# threadpoolctl allows control over the number of threads used by numpy,
+# regardless of the underlying blas:
+from threadpoolctl import threadpool_limits
+
+# pathos allows multiprocessing with numpy arrays as parameters:
 from pathos.multiprocessing import ProcessingPool
 
 from . import powerflow_methods_cc as pf_cc
@@ -32,26 +37,29 @@ def _parallelize(func, S, num_processes=1):
         U, iters = func(S)
         return U, iters
 
-    # If processes > 1, first set mkl to use only one thread:
-    mkl.set_num_threads(1)
-    # Then break up S into chunks:
-    borders = np.linspace(0, S.shape[0], num_processes + 1, dtype=np.int)
-    S_chunks = [S[borders[i] : borders[i + 1], :] for i in range(num_processes)]
-    # Then process in parallel:
-    with ProcessingPool(num_processes) as pool:
-        all_results = pool.map(func, S_chunks)
-    # And re-combine the results:
-    U, iters = (result_set for result_set in zip(*all_results))
-    U = np.vstack(U)
-    iters = np.hstack(iters)
-    # Finally, reenable multithreading in MKL:
-    mkl.set_num_threads(mkl.get_max_threads())
+    if num_processes > 1:
+        # Break up S into chunks:
+        borders = np.linspace(0, S.shape[0], num_processes + 1, dtype=int)
+        S_chunks = [S[borders[i] : borders[i + 1], :] for i in range(num_processes)]
 
-    return U, iters
+        # Then process in parallel:
+        with threadpool_limits(limits=1, user_api="blas"):
+            with ProcessingPool(num_processes) as pool:
+                all_results = pool.map(func, S_chunks)
+
+        # And re-combine the results:
+        U, iters = (result_set for result_set in zip(*all_results))
+        U = np.vstack(U)
+        iters = np.hstack(iters)
+
+        return U, iters
+
+    else:
+        raise ValueError("num_processes must be > 1")
 
 
 def ybusjacobi(grid, S, eps_s=1, max_iters=20000, num_processes=1):
-    """Execute a power flow using the \(Y_BUS)\ Jacobi method.
+    """Execute a power flow using the YBus Jacobi method.
 
     YBUS Jacobi has fast startup, is very memory-efficient and has very fast individual iterations, but potentially requires many iterations (>10000) to find a solution.
 
