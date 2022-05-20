@@ -2,7 +2,7 @@
 Performance-first Power Flow implemented in Python with AOT Compilation
 """
 
-__version__ = "0.0.6"
+__version__ = "0.0.7"
 
 from .log import logger
 from .log import set_loglevel
