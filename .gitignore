@@ -3,6 +3,9 @@
 45_database/
 471_zip/
 data/
+sonderbuch.json
+
+experiments/
 
 # Mocks are ok:
 !data/mock*
