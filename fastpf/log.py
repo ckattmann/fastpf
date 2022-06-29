@@ -2,10 +2,15 @@ import sys
 from loguru import logger
 
 
-def scale_time(time_s):
+def seconds_to_string(time_s):
     """
     Transform a time in seconds to a string with the appropriate unit
     """
+    if time_s >= 60 * 60:  # >= 1 hour
+        hours = round(time_s // (60 * 60))
+        minutes = round(time_s // 60)
+        seconds = round(time_s % 60)
+        return f"{hours}h {minutes}min {seconds}s"
     if time_s >= 60:  # >= 1 minute
         minutes = round(time_s // 60)
         seconds = round(time_s % 60)
@@ -51,6 +56,3 @@ def set_loglevel(loglevel):
 
     if loglevel.upper() == "OFF":
         pass
-
-
-# set_loglevel("INFO")

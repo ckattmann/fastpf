@@ -16,6 +16,7 @@ np.seterr("raise")
 @cc.export(
     "ybusjacobi", "(complex128[:,:],complex128[:], complex128[:,:], float64, int64)"
 )
+@numba.jit(nopython=True, cache=True)
 def ybusjacobi(Y, U, S, eps_s=1.0, max_iters=10000):
     Y = Y.copy()
     S = S.copy()

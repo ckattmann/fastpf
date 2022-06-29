@@ -227,7 +227,7 @@ def process_grid(
     # Reorder to bring slacks to top:
     grid, S, node_swaps = reorder_nodes(grid, S, main_slack_id=main_slack_id)
 
-    # At this point, nodes and lines are fixed:
+    # At this point, number and indices of nodes and lines are fixed:
     nodes = grid["nodes"]
     lines = grid["lines"]
     numberofnodes = len(nodes)
@@ -342,138 +342,6 @@ def process_grid(
     }
 
     return grid_parameters
-
-
-def reorder_grid_nodes(
-    grid, S=None, collapse_identical_slacks=False, main_slack_id=None, verbose=0
-):
-
-    if verbose > 0:
-        log = print
-    else:
-        log = lambda *args, **kwargs: None
-
-    nodes = grid["nodes"]
-    lines = grid["edges"]
-    slacknodes = [n for n in nodes if n["is_slack"]]
-
-    if len(slacknodes) == 1:
-        main_slack_id = slacknodes[0]["id"]
-        additional_slack_ids = {}
-    else:
-        if not main_slack_id:
-            main_slack_id = slacknodes[0]["id"]
-        additional_slack_ids = {n["id"] for n in slacknodes} - {main_slack_id}
-
-    # Delete nodes with identical slack voltage and reconnect:
-    # ========================================================
-    node_ids_to_delete = []
-    if collapse_identical_slacks:
-        for slack1 in [main_slack_id] + list(additional_slack_ids):
-            for slack2 in additional_slack_ids:
-                if slack2 != slack1 and slack1 not in node_ids_to_delete:
-                    same_voltages = (
-                        nodes[slack1]["slack_voltage"] == nodes[slack2]["slack_voltage"]
-                    )
-                    same_angles = (
-                        nodes[slack1]["slack_angle"] == nodes[slack2]["slack_angle"]
-                    )
-                    if same_voltages and same_voltages:
-                        for line in lines:
-                            if line["from"] == slack2:
-                                line["from"] = slack1
-                                log(
-                                    f'Redirecting line {line["id"]} from node: {slack2} -> {slack1}'
-                                )
-                            if line["to"] == slack2:
-                                line["to"] = slack1
-                                log(
-                                    f'Redirecting line {line["id"]} to node: {slack2} -> {slack1}'
-                                )
-                        node_ids_to_delete.append(slack2)
-                        log(
-                            f"Deleting slack node {slack2} and integrating into {slack1}"
-                        )
-
-        # Deleted nodes from the 'nodes' list:
-        nodes = [node for node in nodes if node["id"] not in node_ids_to_delete]
-        S = np.delete(S, node_ids_to_delete, axis=1)
-
-    # Normalize node IDs & fill the gaps:
-    nn = []  # normalized nodes
-    node_id_dict = {n["id"]: n for n in nodes}
-    for i in range(len(nodes)):
-        original_id = i
-        if i in node_id_dict:
-            nn.append(node_id_dict[i])
-        else:
-            next_node_found = False
-            while not next_node_found:
-                i += 1
-                if i in node_id_dict:
-                    print(original_id, i)
-                    next_node = node_id_dict[i]
-                    del node_id_dict[i]
-                    next_node["id"] = original_id
-                    nn.append(next_node)
-                    for l in lines:
-                        if l["from"] == i:
-                            l["from"] = original_id
-                        if l["to"] == i:
-                            l["to"] = original_id
-                    next_node_found = True
-
-        # node_id_dict = {n['id']:n for n in nodes}
-    print([n["id"] for n in nn])
-
-    nodes = nn
-    slacknodes = [n for n in nodes if n["is_slack"]]
-
-    if len(slacknodes) == 1:
-        main_slack_id = slacknodes[0]["id"]
-        additional_slack_ids = {}
-    else:
-        if not main_slack_id:
-            main_slack_id = slacknodes[0]["id"]
-        additional_slack_ids = {n["id"] for n in slacknodes} - {main_slack_id}
-
-    # Reorder to bring slacks to top:
-    # ===============================
-    # plt.plotgraph(grid, node_labels=True)
-    node_swaps = []
-    new_additional_slack_ids = []
-    for i, node_id in enumerate([main_slack_id] + list(additional_slack_ids)):
-        if node_id is not i:
-            log(f"Swapping nodes {node_id} and {i}")
-            for line in lines:
-                if line["from"] == i:
-                    line["from"] = node_id
-                elif line["from"] == node_id:
-                    line["from"] = i
-                if line["to"] == i:
-                    line["to"] = node_id
-                elif line["to"] == node_id:
-                    line["to"] = i
-            for node in nodes:
-                if node["id"] == i:
-                    node1 = node
-                elif node["id"] == node_id:
-                    node2 = node
-            node1["id"] = node_id
-            node2["id"] = i
-            if S is not None:
-                S[:, [node_id, i]] = S[:, [i, node_id]]
-            node_swaps.append((i, node_id))
-        new_additional_slack_ids.append(i)
-    main_slack_id = 0
-    additional_slack_ids = set(new_additional_slack_ids) - {0}
-    log(f"Slack IDs after reordering: 0 + {additional_slack_ids}")
-    nodes.sort(key=lambda n: n["id"])
-
-    grid["nodes"] = nodes
-    grid["edges"] = lines
-
-    return grid, node_swaps, S
 
 
 def calcY(grid, lines_to_remove=[]):

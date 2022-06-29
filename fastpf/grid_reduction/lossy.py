@@ -1,8 +1,6 @@
 import queue
 import numpy as np
 
-# import powerflow
-
 
 def find_impedance_paths(grid):
     """Find impedance from slack to every node in a radial grid

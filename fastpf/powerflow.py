@@ -8,11 +8,17 @@ from threadpoolctl import threadpool_limits
 # pathos allows multiprocessing with numpy arrays as parameters:
 from pathos.multiprocessing import ProcessingPool
 
-from . import powerflow_methods_cc as pf_cc
-from . import process_grid
-from . import integrate_slacks_for_Yident
+# Try to import compiled powerflow methods,
+# if not found (compilation in __init__ failed), import non-compiled version
+try:
+    from . import powerflow_methods_cc as pf_cc
+except ImportError:
+    from . import powerflow_methods as pf_cc
+
+from .process_grid import process_grid
+from .process_grid import integrate_slacks_for_Yident
 from .log import logger
-from .log import scale_time
+from .log import time_to_string
 from .log import set_loglevel
 
 # This line replaces the compiled PF version with the Python versions, for development:
@@ -20,7 +26,7 @@ from .log import set_loglevel
 
 
 def _log_result(name, runtime_s, mean_iters, min_U, all_converged=True):
-    runtime_string = scale_time(runtime_s)
+    runtime_string = time_to_string(runtime_s)
     if all_converged:
         logger.success(
             f"{name:20s} | {runtime_string:>10} | {mean_iters:6.0f} | {min_U:.3f} V"
@@ -361,6 +367,6 @@ def compare_methods(grid, S):
         for func in pf_funcs:
             U, all_converged, iters, runtime = func(grid, S)
             console.log(f"{func.__name__} done")
-            table.add_row(func.__name__, str(np.mean(iters)), scale_time(runtime))
+            table.add_row(func.__name__, str(np.mean(iters)), time_to_string(runtime))
 
     console.print(table)

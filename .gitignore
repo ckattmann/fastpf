@@ -6,6 +6,7 @@ data/
 sonderbuch.json
 
 experiments/
+fastpf/grid_reduction/
 
 # Mocks are ok:
 !data/mock*

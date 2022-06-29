@@ -1,6 +1,6 @@
-import sys
 import collections
 import numpy as np
+
 from .log import logger
 
 
