@@ -1,3 +1,5 @@
+&nbsp;
+
 <img src="./docs/fastpf_logo.svg" width="256"/>
 <a href="https://pypi.org/project/fastapi" target="_blank">
     <img src="https://img.shields.io/pypi/v/fastpf?label=PyPI" alt="PyPI Package Version">
