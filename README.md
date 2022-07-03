@@ -1,4 +1,12 @@
-# fastpf
+&nbsp;
+
+<p align="center">
+<img src="./docs/fastpf_logo.svg" width="256"/>
+</p>
+<a href="https://pypi.org/project/fastapi" target="_blank">
+    <img src="https://img.shields.io/pypi/v/fastpf?label=PyPI" alt="PyPI Package Version">
+</a>
+
 fastpf is a power flow library written in Python with a focus on maximum performance and a simple-to-use API. It was born from a PhD project that set out to find ways to solve the sort of large-scale power flow problems that occur in modern distribution grid plannung, often involving millions of individual scenarios in a comparatively simple grid.
 
 ## Installation
